@@ -1,3 +1,6 @@
+
+# ----PHCcore.py-----
+
 import string,random,pickle as P
 def enc(a,f):
     gs1=""
@@ -6,6 +9,7 @@ def enc(a,f):
     p=1
     cs=list()
     try:
+         
          with open(file, mode="rb") as f:
             while True:
                 try:
