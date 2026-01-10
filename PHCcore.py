@@ -71,7 +71,7 @@ def dec(a,f):
 
 def sheetgen(f):
     fn=r"{nf}".format(nf=f)
-    file=r"{}.dat".format(fn)
+    file=r"uploads/{}.dat".format(fn)
 
     h=["ch"] + [str(i) for i in range(1, 96)]
     ch=list((string.ascii_letters + string.digits + string.punctuation).replace(",", ""))
