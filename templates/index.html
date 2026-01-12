@@ -10,7 +10,7 @@
             max-width: 600px;
             margin: 50px auto;
             padding: 20px;
-            background-color: rgb(57, 60, 61);
+            background-color: rgba(0, 0, 0, 0.708);
         }
         .container {
             text-align: center;
@@ -48,17 +48,17 @@
         .result {
             margin-top: 30px;
             padding: 20px;
-            background-color: #f0f0f0;
+            background-color: #ffffff;
             border-radius: 5px;
         }
         h2[name="title"] {
-            color: #333;
+            color: #000000;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 style="color: #f0f0f0;">PHC web test</h1>
+        <h1 style="color: #ffffff;">Project Hyper Cipher</h1>
         <form method="POST" enctype="multipart/form-data">
 
             <input type="hidden" name="keyfile" value="{{ keyfile }}">
@@ -89,6 +89,7 @@
 
         </form>
         <div class="result">
+            <h1>Output:</h1>
             <h2 name="title">{{ title }}</h2>
             <p>{{ fi }}</p>
         </div>

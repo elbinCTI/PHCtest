@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, send_file
 import PHCcore as p
 import os
+fi = ''
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'dat', 'bin'}
@@ -21,9 +22,9 @@ from werkzeug.utils import secure_filename
 @app.route('/', methods=['GET', 'POST'])
 def index():
     f = request.form.get('keyfile') or 'enc2'
-    fi = ''
+    global fi
     title = ''
-
+    
     if request.method == 'POST':
         i = request.form.get('enc', '').strip()
         j = request.form.get('dec', '').strip()
