@@ -3,14 +3,13 @@ import os
 import shutil
 from typing import Optional
 
-from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
+from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from werkzeug.utils import secure_filename
 
 # Import your custom module
-# Ensure PHCcore.py is in the same directory
 import PHCcore as p
 
 app = FastAPI()
@@ -25,9 +24,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Setup Templates
 templates = Jinja2Templates(directory="templates")
 
-# Optional: Mount static files if you have CSS/JS
-# app.mount("/static", StaticFiles(directory="static"), name="static")
-
 def allowed_file(filename: str) -> bool:
     return (
         '.' in filename and
@@ -36,11 +32,10 @@ def allowed_file(filename: str) -> bool:
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    # Default state for GET request
     return templates.TemplateResponse("index.html", {
         "request": request,
         "fi": "",
-        "keyfile": "enc2",
+        "keyfile": "enc2", # Default keyfile
         "title": ""
     })
 
@@ -51,84 +46,69 @@ async def handle_form(
     enc: Optional[str] = Form(None),
     dec: Optional[str] = Form(None),
     sheet: Optional[str] = Form(None),
-    # Captures specific submit buttons if they have name="gen"
+    # Matches <button name="gen" ...>
     gen: Optional[str] = Form(None), 
-    upload: Optional[UploadFile] = File(None)
+    # Matches <input type="file" name="upload" ...>
+    upload: Optional[UploadFile] = File(None) 
 ):
     fi = ""
     title = ""
-    
-    # We use a local variable f to track the current keyfile name
-    f = keyfile
+    f = keyfile  # Current active keyfile name (without extension)
 
-    # 🔼 HANDLE FILE UPLOAD
-    # Check if a file was actually sent (filename is not empty)
+    # 1. HANDLE FILE UPLOAD
     if upload and upload.filename:
         if allowed_file(upload.filename):
             filename = secure_filename(upload.filename)
             save_path = os.path.join(UPLOAD_FOLDER, filename)
             
-            # Save the file
+            # Save the uploaded file
             with open(save_path, "wb") as buffer:
                 shutil.copyfileobj(upload.file, buffer)
 
-            # Remove extension for consistency (matching Flask logic)
+            # Update 'f' to new filename without extension
             f = os.path.splitext(filename)[0]
             title = f"Using uploaded file: {filename}"
         else:
             title = "Invalid file type."
 
-    # 🔼 HANDLE GENERATE SHEET
+    # 2. HANDLE SHEET GENERATION
+    # Your PHCcore.sheetgen hardcodes 'uploads/' internally, so we just pass the name
     elif gen is not None and sheet:
-        # Assuming p.sheetgen creates a file in the current dir or specific path
-        # You might need to adjust PHCcore to save into UPLOAD_FOLDER
-        # or move the file after generation.
-        # Here we assume p.sheetgen handles it or saves to root.
-        
-        # If PHCcore saves to root, move it to uploads to keep logic consistent
-        p.sheetgen(sheet) 
-        
-        # Check if PHCcore saved it with .dat or .bin, assume .dat for now
-        # Move generated file to upload folder if it's not generated there
-        generated_file = f"{sheet}.dat"
-        if os.path.exists(generated_file) and generated_file != os.path.join(UPLOAD_FOLDER, generated_file):
-             shutil.move(generated_file, os.path.join(UPLOAD_FOLDER, generated_file))
+        try:
+            p.sheetgen(sheet)
+            f = sheet
+            title = f"Sheet '{sheet}' generated"
+        except Exception as e:
+            title = f"Error generating sheet: {e}"
 
-        f = sheet
-        title = f"Sheet '{sheet}' generated"
-
-    # 🔼 HANDLE DECRYPTION
+    # 3. HANDLE DECRYPTION
     elif dec:
-        try:
-            # Construct full path to keyfile
-            key_path = os.path.join(UPLOAD_FOLDER, f)
-            # If extension is missing in 'f', PHCcore might expect it or the file logic needs it.
-            # Based on your flask code: p.dec(j, os.path.join(UPLOAD_FOLDER, f))
-            # You might need to append .dat if 'f' doesn't have it.
-            
-            # Auto-resolving extension if file not found exactly as 'f'
-            if not os.path.exists(key_path):
-                 if os.path.exists(key_path + ".dat"):
-                     key_path += ".dat"
-            
-            fi = p.dec(dec.strip(), key_path)
+        # PHCcore.dec adds '.dat', so we need to pass 'uploads/filename'
+        path_to_file = os.path.join(UPLOAD_FOLDER, f)
+        
+        # Run decryption
+        result = p.dec(dec.strip(), path_to_file)
+        
+        # Check for None (PHCcore returns None/prints if file not found)
+        if result is None:
+            fi = "Error: Keyfile not found."
+        else:
+            fi = result
             title = 'Decoded text:'
-        except Exception as e:
-            fi = f"Error: {str(e)}"
 
-    # 🔼 HANDLE ENCRYPTION
+    # 4. HANDLE ENCRYPTION
     elif enc:
-        try:
-            key_path = os.path.join(UPLOAD_FOLDER, f)
-            # Auto-resolving extension logic
-            if not os.path.exists(key_path):
-                 if os.path.exists(key_path + ".dat"):
-                     key_path += ".dat"
-
-            fi = p.enc(enc.strip(), key_path)
+        # PHCcore.enc adds '.dat', so we need to pass 'uploads/filename'
+        path_to_file = os.path.join(UPLOAD_FOLDER, f)
+        
+        # Run encryption
+        result = p.enc(enc.strip(), path_to_file)
+        
+        if result is None:
+            fi = "Error: Keyfile not found."
+        else:
+            fi = result
             title = 'Encoded text:'
-        except Exception as e:
-            fi = f"Error: {str(e)}"
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -139,26 +119,23 @@ async def handle_form(
 
 @app.get("/download")
 async def download_sheet(file: str = "enc2"):
-    # Sanitize input to prevent directory traversal
+    """
+    Downloads the .dat file from the uploads folder.
+    """
     safe_filename = secure_filename(file)
-    
-    # Assuming the files have .dat extension based on Flask code
     filename_with_ext = f"{safe_filename}.dat"
     path = os.path.join(UPLOAD_FOLDER, filename_with_ext)
 
     if not os.path.exists(path):
-        # Fallback to check if file param already had extension
-        path = os.path.join(UPLOAD_FOLDER, safe_filename)
-        if not os.path.exists(path):
-             raise HTTPException(status_code=404, detail="File not found")
-        filename_with_ext = safe_filename
+        return HTMLResponse(content="File not found", status_code=404)
 
     return FileResponse(
-        path, 
-        media_type='application/octet-stream', 
-        filename=filename_with_ext
+        path=path, 
+        filename=filename_with_ext,
+        media_type='application/octet-stream'
     )
 
 if __name__ == '__main__':
     import uvicorn
+    # Runs the server on http://127.0.0.1:8000
     uvicorn.run(app, host="127.0.0.1", port=8000)
