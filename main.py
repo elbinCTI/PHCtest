@@ -73,7 +73,7 @@ async def handle_form(
 
     # 2. HANDLE SHEET GENERATION
     # Your PHCcore.sheetgen hardcodes 'uploads/' internally, so we just pass the name
-    elif gen is not None and sheet:
+    elif gen is not None and sheet: 
         try:
             p.sheetgen(sheet)
             f = sheet
