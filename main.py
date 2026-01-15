@@ -144,13 +144,9 @@ if __name__ == '__main__':
     # OPTIMIZATION: Get PORT from environment (Render sets this), default to 10000
     # OPTIMIZATION: Host must be 0.0.0.0 to expose to the internet
     port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
-
-
-
-
+    # uvicorn.run(app, host="0.0.0.0", port=port)
     # for the testing use this line instead 
-    # uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
     
 
