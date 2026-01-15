@@ -1,0 +1,48 @@
+
+__pycache__/
+*.py[cod]
+
+
+.venv/
+venv/
+env/
+
+
+*.log
+uvicorn.log
+
+
+uploads/*
+!uploads/.gitkeep
+
+# Ignore generated encryption sheets & uploads
+*.dat
+*.bin
+
+# ======================
+# Environment variables
+# ======================
+.env
+.env.*
+!.env.example
+
+# ======================
+# IDE / Editor files
+# ======================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ======================
+# OS files
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# Testing / coverage (if added later)
+# ======================
+.pytest_cache/
+.coverage
+htmlcov/
