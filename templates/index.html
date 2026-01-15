@@ -553,10 +553,16 @@
 
         /* Fix the floating signature so it doesn't block keyboard */
         .signature {
-          position: static;
-          text-align: center;
-          margin-top: 40px;
-          padding-bottom: 20px;
+          position: fixed;          /* stays in place on scroll */
+          right: 24px;
+          top: 50%;
+          transform: translateY(-50%) rotate(90deg);
+          transform-origin: center;
+          font-size: 12px;
+          letter-spacing: 2px;
+          opacity: 0.6;
+          color: #9aa4b2;
+          white-space: nowrap;
         }
 
         h1 {
@@ -624,6 +630,6 @@
       </a>
     </div>
 
-    <div class="signature">DESIGNED BY ELBIN</div>
+    <span class="signature">DESIGNED BY ELBIN</span>
   </body>
 </html>
